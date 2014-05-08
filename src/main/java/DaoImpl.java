@@ -1,5 +1,8 @@
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
 
 /**
@@ -24,6 +27,25 @@ public class DaoImpl implements Dao {
         int update = jdbcTemplate.update("INSERT INTO passwords   values (?,?)", unit.getName(), unit.getPassword());
 
         System.out.println("INSERT INTO passwords: " + unit.getName() + " " + unit.getPassword()+" rows: "+ update);
+    }
+
+    @Override
+    public void saveListUnit(List<Unit> units) {
+        BatchPreparedStatementSetter batchPreparedStatementSetter = new BatchPreparedStatementSetter() {
+            @Override
+            public void setValues(PreparedStatement preparedStatement, int i) throws SQLException {
+                Unit unit = units.get(i);
+                preparedStatement.setString(1, unit.getName());
+                preparedStatement.setString(2, unit.getPassword());
+            }
+
+            @Override
+            public int getBatchSize() {
+                return units.size();
+            }
+        };
+        jdbcTemplate.batchUpdate("INSERT INTO passwords  values (?,?)", batchPreparedStatementSetter);
+        System.out.println("insert units = " + units.size());
     }
 
     @Override

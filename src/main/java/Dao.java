@@ -6,6 +6,8 @@ import java.util.List;
 public interface Dao {
     void createTableIfNotExist();
     void saveUnit(Unit unit);
+
+    void saveListUnit(List<Unit> units);
     List<Unit> getAllUnit();
     void deleteUnit(Unit unit);
     void editUnit(Unit unit);

@@ -43,7 +43,8 @@ public class MainForm extends JFrame {
             public void windowClosing(WindowEvent e) {
                 removeExcess();
                 if (!saveBufferUnit.isEmpty())
-                    saveBufferUnit.forEach(unit -> dao.saveUnit(unit));
+//                    saveBufferUnit.forEach(unit -> dao.saveUnit(unit));
+                    dao.saveListUnit(saveBufferUnit);
                 if (!deleteBufferUnit.isEmpty()) {
                     deleteBufferUnit.forEach(unit -> dao.deleteUnit(unit));
                 }
