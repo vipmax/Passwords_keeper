@@ -36,6 +36,6 @@ public class Unit {
         for (int i = 0; i < password.length(); i++) {
             str = str + "*";
         }
-        return  name + "  -  " + str;
+        return name + "  -  " + str;
     }
 }

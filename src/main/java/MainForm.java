@@ -1,10 +1,12 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.datatransfer.StringSelection;
-import java.awt.event.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
 /**
  * Created by max on 26.03.2014.
@@ -13,13 +15,8 @@ import java.util.function.Consumer;
 public class MainForm extends JFrame {
 
 
-    private  Change change;
-    List<Unit> saveBufferUnit = new ArrayList<Unit>();
-    List<Unit> deleteBufferUnit = new ArrayList<Unit>();
-    List<Unit> editBufferUnit = new ArrayList<Unit>();
-    Boolean isUnitsShown = false;
-    DbDao dao;
     DefaultListModel<Unit> listModel;
+    private Change change;
     private JList unitsList;
     private JButton addUnitButton;
     private JTextField passTextField;
@@ -29,6 +26,12 @@ public class MainForm extends JFrame {
     private JButton showButton;
     private JButton copyToBufferButton;
     private JButton changeButton;
+
+    private List<Unit> saveBufferUnit = new ArrayList<Unit>();
+    private List<Unit> deleteBufferUnit = new ArrayList<Unit>();
+    private List<Unit> editBufferUnit = new ArrayList<Unit>();
+    private Boolean isUnitsShown = false;
+    private Dao dao;
 
     public MainForm() {
         init();
@@ -40,39 +43,19 @@ public class MainForm extends JFrame {
             public void windowClosing(WindowEvent e) {
                 removeExcess();
                 if (!saveBufferUnit.isEmpty())
-                    saveBufferUnit.forEach(new Consumer<Unit>() {
-                        @Override
-                        public void accept(Unit unit) {
-                            dao.saveUnit(unit);
-                        }
-                    });
+                    saveBufferUnit.forEach(unit -> dao.saveUnit(unit));
                 if (!deleteBufferUnit.isEmpty()) {
-                    deleteBufferUnit.forEach(new Consumer<Unit>() {
-                        @Override
-                        public void accept(Unit unit) {
-                            dao.deleteUnit(unit);
-                        }
-                    });
+                    deleteBufferUnit.forEach(unit -> dao.deleteUnit(unit));
                 }
                 if (!editBufferUnit.isEmpty()) {
-                    editBufferUnit.forEach(new Consumer<Unit>() {
-                        @Override
-                        public void accept(Unit unit) {
-                            dao.editUnit(unit);
-                        }
-                    });
+                    editBufferUnit.forEach(unit -> dao.editUnit(unit));
                 }
 
                 System.exit(0);
             }
         });
 
-        addUnitButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                MainForm.this.addUnitToList();
-            }
-        });
+        addUnitButton.addActionListener(e -> MainForm.this.addUnitToList());
         passTextField.addKeyListener(new KeyAdapter() {
             @Override
             public void keyReleased(KeyEvent e) {
@@ -82,12 +65,7 @@ public class MainForm extends JFrame {
         });
 
 
-        deleteSelectedUnit.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                MainForm.this.deleteSelectedUnit();
-            }
-        });
+        deleteSelectedUnit.addActionListener(e -> MainForm.this.deleteSelectedUnit());
         unitsList.addKeyListener(new KeyAdapter() {
             @Override
             public void keyReleased(KeyEvent e) {
@@ -95,40 +73,29 @@ public class MainForm extends JFrame {
                     deleteSelectedUnit();
             }
         });
-        showButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (isUnitsShown) {
-                    unitsList.setVisible(false);
-                    isUnitsShown = false;
-                } else {
-                    unitsList.setVisible(true);
-                    unitsList.updateUI();
-                    isUnitsShown = true;
-
-                }
-
-
-            }
-        });
-        copyToBufferButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                MainForm.this.setClipboard(listModel.get(unitsList.getSelectedIndex()).getPassword());
-            }
-        });
-
-        changeButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (unitsList.isSelectionEmpty()) {
-                    return;
-                }
-                Unit unit = listModel.get(unitsList.getSelectedIndex());
-                change = new Change(unit);
+        showButton.addActionListener(e -> {
+            if (isUnitsShown) {
+                unitsList.setVisible(false);
+                isUnitsShown = false;
+            } else {
+                unitsList.setVisible(true);
                 unitsList.updateUI();
-                editBufferUnit.add(unit);
+                isUnitsShown = true;
+
             }
+
+
+        });
+        copyToBufferButton.addActionListener(e -> MainForm.this.setClipboard(listModel.get(unitsList.getSelectedIndex()).getPassword()));
+
+        changeButton.addActionListener(e -> {
+            if (unitsList.isSelectionEmpty()) {
+                return;
+            }
+            Unit unit = listModel.get(unitsList.getSelectedIndex());
+            change = new Change(unit);
+            unitsList.updateUI();
+            editBufferUnit.add(unit);
         });
     }
 
@@ -142,16 +109,14 @@ public class MainForm extends JFrame {
         unitsList.updateUI();
     }
 
-    public void setDao(DbDao dao) {
+    public void setDao(Dao dao) {
         this.dao = dao;
     }
 
     private void deleteSelectedUnit() {
         int[] indexs = unitsList.getSelectedIndices();
 
-
         for (int index : indexs) {
-//            System.out.println(index);
             deleteBufferUnit.add(listModel.get(index));
             listModel.remove(index);
         }
@@ -167,35 +132,24 @@ public class MainForm extends JFrame {
         }
     }
 
-
     public void loadListModel(List<Unit> units) {
 
-        units.forEach(new Consumer<Unit>() {
-            @Override
-            public void accept(Unit unit) {
-                listModel.addElement(unit);
-            }
-        });
+        units.forEach(listModel::addElement);
 
     }
 
     public void removeExcess() {
-
-
         for (int i = 0; i < saveBufferUnit.size(); i++) {
             for (int j = 0; j < deleteBufferUnit.size(); j++) {
 
-                if (deleteBufferUnit.get(j).getName() == saveBufferUnit.get(i).getName()
-                        && deleteBufferUnit.get(j).getPassword() == saveBufferUnit.get(i).getPassword()) {
+                if (deleteBufferUnit.get(j).getName().equals(saveBufferUnit.get(i).getName())
+                        && deleteBufferUnit.get(j).getPassword().equals(saveBufferUnit.get(i).getPassword())) {
                     System.out.println("Ложный юнит " + deleteBufferUnit.get(j));
                     deleteBufferUnit.remove(j);
                     saveBufferUnit.remove(i);
-
                 }
-
             }
         }
-
 
     }
 

@@ -2,12 +2,13 @@ import javax.swing.*;
 import java.awt.event.*;
 
 public class Change extends JDialog {
+    Unit unit;
     private JPanel contentPane;
     private JButton buttonOK;
     private JButton buttonCancel;
     private JTextField textFieldUnit;
     private JTextField textFieldPass;
-    Unit unit;
+
     public Change(Unit unit) {
         this.unit = unit;
         textFieldUnit.setText(unit.getName());
@@ -47,7 +48,7 @@ public class Change extends JDialog {
     }
 
     private void onOK() {
-        if(textFieldPass.isValid()){
+        if (textFieldPass.isValid()) {
             unit.setPassword(textFieldPass.getText());
             dispose();
         }

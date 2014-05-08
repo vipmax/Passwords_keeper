@@ -1,14 +1,11 @@
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 
 /**
  * Created by max on 26.03.2014.
  */
-public class DbDaoImpl implements DbDao {
+public class DaoImpl implements Dao {
     private JdbcTemplate jdbcTemplate;
 
     public void setJdbcTemplate(JdbcTemplate jdbcTemplate) {
@@ -17,7 +14,7 @@ public class DbDaoImpl implements DbDao {
 
 
     @Override
-    public void createDB() {
+    public void createTableIfNotExist() {
         jdbcTemplate.update("CREATE TABLE IF NOT EXISTS passwords (name TEXT NOT NULL,password TEXT NOT NULL)");
     }
 
