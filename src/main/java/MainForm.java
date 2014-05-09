@@ -26,12 +26,14 @@ public class MainForm extends JFrame {
     private JButton showButton;
     private JButton copyToBufferButton;
     private JButton changeButton;
+    private JLabel infoLabel;
 
     private List<Unit> saveBufferUnit = new ArrayList<Unit>();
     private List<Unit> deleteBufferUnit = new ArrayList<Unit>();
     private List<Unit> editBufferUnit = new ArrayList<Unit>();
     private Boolean isUnitsShown = false;
     private Dao dao;
+    private Thread thread;
 
     public MainForm() {
         init();
@@ -41,27 +43,33 @@ public class MainForm extends JFrame {
         this.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
-                removeExcess();
                 if (!saveBufferUnit.isEmpty())
-//                    saveBufferUnit.forEach(unit -> dao.saveUnit(unit));
                     dao.saveListUnit(saveBufferUnit);
                 if (!deleteBufferUnit.isEmpty()) {
                     deleteBufferUnit.forEach(unit -> dao.deleteUnit(unit));
                 }
                 if (!editBufferUnit.isEmpty()) {
-                    editBufferUnit.forEach(unit -> dao.editUnit(unit));
+                    editBufferUnit.forEach(unit -> dao.editPasswordUnit(unit));
                 }
 
                 System.exit(0);
             }
         });
 
-        addUnitButton.addActionListener(e -> MainForm.this.addUnitToList());
+        addUnitButton.addActionListener(e -> {
+            if (!unitTextField.toString().isEmpty() && !passTextField.getText().isEmpty()) {
+                Unit unit = new Unit(unitTextField.getText(), passTextField.getText());
+                addUnitToBuffer(unit);
+            }
+        });
         passTextField.addKeyListener(new KeyAdapter() {
             @Override
             public void keyReleased(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER)
-                    addUnitToList();
+                    if (!unitTextField.toString().isEmpty() && !passTextField.getText().isEmpty()) {
+                        Unit unit = new Unit(unitTextField.getText(), passTextField.getText());
+                        addUnitToBuffer(unit);
+                    }
             }
         });
 
@@ -94,43 +102,114 @@ public class MainForm extends JFrame {
                 return;
             }
             Unit unit = listModel.get(unitsList.getSelectedIndex());
-            change = new Change(unit);
-            unitsList.updateUI();
-            editBufferUnit.add(unit);
+            editUnit(unit);
         });
     }
 
-    private void init() {
-        setContentPane(rootPanel);
-        setTitle("Password Keeper");
-        setVisible(true);
-        pack();
-        setSize(700, 400);
-        unitsList.setVisible(false);
-        unitsList.updateUI();
-    }
+    private void addUnitToBuffer(Unit unit) {
+        if (saveBufferUnit.contains(unit) || dao.isContain(unit)) {
+            animateInfoLabel("Already exist");
+            return;
+        }
 
-    public void setDao(Dao dao) {
-        this.dao = dao;
+        listModel.addElement(unit);
+        saveBufferUnit.add(unit);
+        animateInfoLabel("Adding successful");
     }
-
     private void deleteSelectedUnit() {
         int[] indexs = unitsList.getSelectedIndices();
 
         for (int index : indexs) {
-            deleteBufferUnit.add(listModel.get(index));
+            Unit unit = listModel.get(index);
+            if (saveBufferUnit.size() > 0 && saveBufferUnit.contains(unit)) {
+                saveBufferUnit.remove(unit);
+                listModel.remove(index);
+                animateInfoLabel("Deleting successful");
+                System.out.println("Удалено из буфера сохранения");
+                return;
+            }
+            deleteBufferUnit.add(unit);
+            animateInfoLabel("Deleting successful");
             listModel.remove(index);
+
         }
 
 
     }
 
-    private void addUnitToList() {
-        if (!unitTextField.toString().isEmpty() && !passTextField.getText().isEmpty()) {
-            Unit unit = new Unit(unitTextField.getText(), passTextField.getText());
-            listModel.addElement(unit);
-            saveBufferUnit.add(unit);
+    private void editUnit(Unit unit) {
+        change = new Change(unit);
+        Unit changingUnit = change.getChangingUnit();
+        if (changingUnit.getName() != unit.getName()) {
+            deleteBufferUnit.add(unit);
+            saveBufferUnit.add(changingUnit);
+            listModel.removeElement(unit);
+            listModel.addElement(changingUnit);
+            System.out.println("unit = " + unit);
+            System.out.println("changingUnit = " + changingUnit);
         }
+
+        unitsList.updateUI();
+        if (saveBufferUnit.contains(unit)) {
+            saveBufferUnit.set(saveBufferUnit.indexOf(unit), unit);
+            animateInfoLabel("Changing successful");
+            System.out.println("Изменено в буфере");
+            return;
+        }
+
+        editBufferUnit.add(changingUnit);
+    }
+
+    private void animateInfoLabel(String text) {
+        infoLabel.setText(text);
+
+        if (thread != null) {
+            thread.interrupt();
+        }
+        thread = new Thread(() -> {
+
+            try {
+
+
+                for (int i = 0; i < 255; i++) {
+                    infoLabel.setForeground(new Color(255, 0, 0, i));
+                    Thread.sleep(10);
+                }
+                for (int i = 255; i > 0; i--) {
+                    infoLabel.setForeground(new Color(i, 0, 0, i));
+
+                    Thread.sleep(5);
+                }
+
+                infoLabel.setText("");
+
+            } catch (InterruptedException e) {
+                System.out.println("Прерывание потока");
+            }
+
+        });
+        thread.start();
+    }
+
+
+    private void init() {
+        this.setLocation(300, 300);
+        setContentPane(rootPanel);
+        setTitle("Password Keeper");
+        setVisible(true);
+        unitsList.setVisible(false);
+        unitsList.updateUI();
+        infoLabel.setOpaque(true);
+
+
+        for (int i = 50; i < 300; i += 5) {
+            this.setSize(600, i);
+        }
+
+        showButton.setOpaque(true);
+
+
+        animateInfoLabel("Welcome");
     }
 
     public void loadListModel(List<Unit> units) {
@@ -139,24 +218,12 @@ public class MainForm extends JFrame {
 
     }
 
-    public void removeExcess() {
-        for (int i = 0; i < saveBufferUnit.size(); i++) {
-            for (int j = 0; j < deleteBufferUnit.size(); j++) {
-
-                if (deleteBufferUnit.get(j).getName().equals(saveBufferUnit.get(i).getName())
-                        && deleteBufferUnit.get(j).getPassword().equals(saveBufferUnit.get(i).getPassword())) {
-                    System.out.println("Ложный юнит " + deleteBufferUnit.get(j));
-                    deleteBufferUnit.remove(j);
-                    saveBufferUnit.remove(i);
-                }
-            }
-        }
-
-    }
-
     public void setClipboard(String str) {
         StringSelection ss = new StringSelection(str);
         Toolkit.getDefaultToolkit().getSystemClipboard().setContents(ss, null);
     }
 
+    public void setDao(Dao dao) {
+        this.dao = dao;
+    }
 }

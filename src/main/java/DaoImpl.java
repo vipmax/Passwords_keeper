@@ -10,6 +10,7 @@ import java.util.List;
  */
 public class DaoImpl implements Dao {
     private JdbcTemplate jdbcTemplate;
+    private Crypt crypt;
 
     public void setJdbcTemplate(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
@@ -31,12 +32,17 @@ public class DaoImpl implements Dao {
 
     @Override
     public void saveListUnit(List<Unit> units) {
+        if (crypt == null) {
+            System.out.println("crypt null");
+        }
+
         BatchPreparedStatementSetter batchPreparedStatementSetter = new BatchPreparedStatementSetter() {
             @Override
             public void setValues(PreparedStatement preparedStatement, int i) throws SQLException {
                 Unit unit = units.get(i);
                 preparedStatement.setString(1, unit.getName());
-                preparedStatement.setString(2, unit.getPassword());
+                preparedStatement.setString(2, crypt.encrypt(unit.getPassword()));
+
             }
 
             @Override
@@ -50,19 +56,8 @@ public class DaoImpl implements Dao {
 
     @Override
     public List<Unit> getAllUnit() {
-
         String sql = "SELECT * FROM passwords";
-
-//        return jdbcTemplate.query(sql,new ParameterizedRowMapper<Unit>() {   also works
-//            @Override
-//            public Unit mapRow(ResultSet resultSet, int i) throws SQLException {
-//                Unit  user = new Unit(resultSet.getString(1), resultSet.getString(2));
-//                System.out.println(user);
-//                return user;
-//            }
-//        });
-
-        return jdbcTemplate.query(sql, (resultSet, i) -> new Unit(resultSet.getString(1), resultSet.getString(2)));
+        return jdbcTemplate.query(sql, (resultSet, i) -> new Unit(resultSet.getString(1), crypt.decrypt(resultSet.getString(2))));
 
 
     }
@@ -70,15 +65,23 @@ public class DaoImpl implements Dao {
     @Override
     public void deleteUnit(Unit unit) {
         System.out.println("Deleting "+unit.getName() + " " + unit.getPassword());
-        int update = jdbcTemplate.update("delete from passwords where passwords.name = ? AND passwords.password = ? ", unit.getName(), unit.getPassword());
+        int update = jdbcTemplate.update("delete from passwords where passwords.name = ? AND passwords.password = ? ", unit.getName(), crypt.encrypt(unit.getPassword()));
         System.out.println("delete "+ update + "rows");
     }
 
     @Override
-    public void editUnit(Unit unit) {
+    public void editPasswordUnit(Unit unit) {
         System.out.println("Editing "+unit.getName() + " " + unit.getPassword());
-
-        jdbcTemplate.execute("update passwords SET password = '"+ unit.getPassword()+"' where  name is '"+ unit.getName()+"'");
+        jdbcTemplate.execute("update passwords SET password = '" + crypt.encrypt(unit.getPassword()) + "' where  name is '" + unit.getName() + "'");
     }
 
+    @Override
+    public boolean isContain(Unit unit) {
+        int count = jdbcTemplate.queryForInt("select count(*) from passwords where name = ?  and password = ?", unit.getName(), crypt.encrypt(unit.getPassword()));
+        return count > 0;
+    }
+
+    public void setCrypt(Crypt crypt) {
+        this.crypt = crypt;
+    }
 }

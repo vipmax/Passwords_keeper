@@ -2,6 +2,8 @@ import javax.swing.*;
 import java.awt.event.*;
 
 public class Change extends JDialog {
+
+
     Unit unit;
     private JPanel contentPane;
     private JButton buttonOK;
@@ -10,7 +12,7 @@ public class Change extends JDialog {
     private JTextField textFieldPass;
 
     public Change(Unit unit) {
-        this.unit = unit;
+
         textFieldUnit.setText(unit.getName());
 
         setTitle("Change Unit");
@@ -48,8 +50,8 @@ public class Change extends JDialog {
     }
 
     private void onOK() {
-        if (textFieldPass.isValid()) {
-            unit.setPassword(textFieldPass.getText());
+        if (!textFieldPass.getText().isEmpty() && !textFieldUnit.getText().isEmpty()) {
+            unit = new Unit(textFieldUnit.getText(), textFieldPass.getText());
             dispose();
         }
     }
@@ -59,5 +61,8 @@ public class Change extends JDialog {
         dispose();
     }
 
+    public Unit getChangingUnit() {
+        return unit;
+    }
 
 }
