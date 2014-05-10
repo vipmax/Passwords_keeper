@@ -11,8 +11,8 @@ public class Change extends JDialog {
     private JTextField textFieldUnit;
     private JTextField textFieldPass;
 
-    public Change(Unit unit) {
-
+    public Change(Unit unit, int x, int y) {
+        this.setLocation(x, y);
         textFieldUnit.setText(unit.getName());
 
         setTitle("Change Unit");

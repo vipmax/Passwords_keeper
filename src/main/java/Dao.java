@@ -13,4 +13,10 @@ public interface Dao {
     void editPasswordUnit(Unit unit);
 
     boolean isContain(Unit unit);
+
+    boolean isCreateMasterPasswordTable();
+
+    boolean checkMasterPassword(String mail, String pass);
+
+    void createMasterPassword(String email, String password);
 }

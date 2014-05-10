@@ -10,16 +10,22 @@ import java.util.List;
  */
 public class DaoImpl implements Dao {
     private JdbcTemplate jdbcTemplate;
+
     private Crypt crypt;
 
     public void setJdbcTemplate(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    public void setCrypt(CryptImpl crypt) {
+        this.crypt = crypt;
+    }
+
 
     @Override
     public void createTableIfNotExist() {
         jdbcTemplate.update("CREATE TABLE IF NOT EXISTS passwords (name TEXT NOT NULL,password TEXT NOT NULL)");
+        System.out.println("Таблица с паролями создана");
     }
 
     @Override
@@ -27,14 +33,11 @@ public class DaoImpl implements Dao {
 
         int update = jdbcTemplate.update("INSERT INTO passwords   values (?,?)", unit.getName(), unit.getPassword());
 
-        System.out.println("INSERT INTO passwords: " + unit.getName() + " " + unit.getPassword()+" rows: "+ update);
+        System.out.println("Добавлено в passwords: " + unit.getName() + " " + unit.getPassword() + " строчек: " + update);
     }
 
     @Override
     public void saveListUnit(List<Unit> units) {
-        if (crypt == null) {
-            System.out.println("crypt null");
-        }
 
         BatchPreparedStatementSetter batchPreparedStatementSetter = new BatchPreparedStatementSetter() {
             @Override
@@ -51,27 +54,30 @@ public class DaoImpl implements Dao {
             }
         };
         jdbcTemplate.batchUpdate("INSERT INTO passwords  values (?,?)", batchPreparedStatementSetter);
-        System.out.println("insert units = " + units.size());
+        System.out.println("Вставлено в passwords = " + units.size());
     }
 
     @Override
     public List<Unit> getAllUnit() {
         String sql = "SELECT * FROM passwords";
-        return jdbcTemplate.query(sql, (resultSet, i) -> new Unit(resultSet.getString(1), crypt.decrypt(resultSet.getString(2))));
+
+        List<Unit> query = jdbcTemplate.query(sql, (resultSet, i) -> new Unit(resultSet.getString(1), crypt.decrypt(resultSet.getString(2))));
+        System.out.println("Таблица passwords загружена в память");
+        return query;
 
 
     }
 
     @Override
     public void deleteUnit(Unit unit) {
-        System.out.println("Deleting "+unit.getName() + " " + unit.getPassword());
+
         int update = jdbcTemplate.update("delete from passwords where passwords.name = ? AND passwords.password = ? ", unit.getName(), crypt.encrypt(unit.getPassword()));
-        System.out.println("delete "+ update + "rows");
+        System.out.println("Удалено из passwords" + update + " строк");
     }
 
     @Override
     public void editPasswordUnit(Unit unit) {
-        System.out.println("Editing "+unit.getName() + " " + unit.getPassword());
+        System.out.println("Изменяем  в таблице " + unit.getName() + " " + unit.getPassword());
         jdbcTemplate.execute("update passwords SET password = '" + crypt.encrypt(unit.getPassword()) + "' where  name is '" + unit.getName() + "'");
     }
 
@@ -81,7 +87,35 @@ public class DaoImpl implements Dao {
         return count > 0;
     }
 
-    public void setCrypt(Crypt crypt) {
-        this.crypt = crypt;
+
+    @Override
+    public boolean isCreateMasterPasswordTable() {
+
+        try {
+            jdbcTemplate.update("CREATE TABLE master_password (name TEXT NOT NULL,password TEXT NOT NULL)");
+        } catch (Exception e) {
+            System.out.println("Таблица мастер пароля уже была создана ранее");
+            return false;
+        }
+        System.out.println("Таблица мастер пароля создана");
+        return true;
     }
+
+    @Override
+    public boolean checkMasterPassword(String mail, String pass) {
+
+        boolean b = jdbcTemplate.queryForInt("select count(*) from master_password where name = ?  and password = ?",
+                mail, crypt.MD5(pass)) > 0;
+        System.out.println("Проверка пароля = " + b);
+        return b;
+    }
+
+    @Override
+    public void createMasterPassword(String email, String password) {
+        jdbcTemplate.update("insert into master_password values (?,?)", email, crypt.MD5(password));
+        System.out.println("Мастер пароль создан");
+        System.out.println("email = " + email);
+        System.out.println("password = " + password);
+    }
+
 }

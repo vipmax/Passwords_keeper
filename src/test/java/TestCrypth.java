@@ -12,7 +12,7 @@ public class TestCrypth {
 
     @Before
     public void setUp() throws Exception {
-        crypt = new Crypt();
+        crypt = new CryptImpl();
     }
 
     @Test

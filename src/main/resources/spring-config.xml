@@ -4,7 +4,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
     <bean id="DbDaoImp" class="DaoImpl">
-    <property name="jdbcTemplate" ref="jdbcTemplate" />
+        <property name="jdbcTemplate" ref="jdbcTemplate"/>
         <property name="crypt" ref="cript"></property>
     </bean>
 
@@ -15,12 +15,13 @@
 
     <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
         <property name="driverClassName" value="org.sqlite.JDBC" />
-        <property name="url" value="jdbc:sqlite:DB.db" />
+        <property name="url" value="jdbc:sqlite:password_keeper_data_base.db"/>
         <property name="username" value="" />
         <property name="password" value="" />
     </bean>
 
-    <bean id="form" class="MainForm"></bean>
-    <bean id="cript" class="Crypt"></bean>
+
+    <bean id="cript" class="CryptImpl"></bean>
+
 
 </beans>
