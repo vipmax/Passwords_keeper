@@ -14,13 +14,13 @@ public class Main {
     public static void main(String[] args) {
 
 
-        MasterPassword masterPassword = new MasterPassword(Thread.currentThread());
+        MasterPasswordForm masterPasswordForm = new MasterPasswordForm(Thread.currentThread());
         Main main = new Main();
         main.ac = new ClassPathXmlApplicationContext("spring-config.xml");
 
         main.dao = (Dao) main.ac.getBean("DbDaoImp");
-        masterPassword.setDao(main.dao);
-        masterPassword.defineState();
+        masterPasswordForm.setDao(main.dao);
+        masterPasswordForm.defineState();
 
         new Thread(() -> {
             main.form = new MainForm();

@@ -16,4 +16,6 @@ public interface Crypt {
         }
         return null;
     }
+
+    void setKey(String key);
 }

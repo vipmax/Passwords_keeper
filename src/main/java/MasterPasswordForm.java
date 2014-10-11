@@ -5,7 +5,7 @@ import java.awt.event.WindowEvent;
 /**
  * Created by admin on 10.05.14.
  */
-public class MasterPassword extends JFrame {
+public class MasterPasswordForm extends JFrame {
     private static String login;
     boolean isAutorize = false;
     private JButton okButton;
@@ -16,9 +16,9 @@ public class MasterPassword extends JFrame {
     private JLabel masterPasswordLabel;
     private Dao dao;
     private Thread thread;
-    private boolean isnotCreateMasterPassword;
+    private boolean isNotCreateMasterPassword;
 
-    public MasterPassword(Thread thread) {
+    public MasterPasswordForm(Thread thread) {
         this.thread = thread;
         setLocation(MainForm.xLoc + MainForm.height / 2 - 100, MainForm.yLoc + MainForm.width / 2 - 50);
         setContentPane(rootPanel);
@@ -37,7 +37,7 @@ public class MasterPassword extends JFrame {
             String password = passwordTF.getText();
 
             if (email.isEmpty() && password.isEmpty()) return;
-            if (isnotCreateMasterPassword) {
+            if (isNotCreateMasterPassword) {
                 login = email;
                 showMainForm();
                 new Thread(() -> {
@@ -48,7 +48,8 @@ public class MasterPassword extends JFrame {
             if (dao.checkMasterPassword(email, password)) {
                 login = email;
                 showMainForm();
-
+            }else {
+                masterPasswordLabel.setText("Неверный пароль. Введите заново");
             }
 
         });
@@ -70,13 +71,13 @@ public class MasterPassword extends JFrame {
 
     public void defineState() {
 
-        isnotCreateMasterPassword = dao.isCreateMasterPasswordTable();
-        if (isnotCreateMasterPassword) {
+        isNotCreateMasterPassword = dao.isCreateMasterPasswordTable();
+        if (isNotCreateMasterPassword) {
 
-            masterPasswordLabel.setText("Create master password");
+            masterPasswordLabel.setText("Создайте мастер пароль");
             return;
         }
-        masterPasswordLabel.setText("Enter master password");
+        masterPasswordLabel.setText("Мастер пароль найден. Введите");
     }
 
     public void setDao(Dao dao) {

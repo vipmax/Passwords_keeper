@@ -13,7 +13,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
 class CryptImpl implements Crypt {
-    private final String KEY;
+    private String KEY;
     Cipher ecipher;
     Cipher dcipher;
 
@@ -40,7 +40,7 @@ class CryptImpl implements Crypt {
     }
 
     /**
-     * Функция шифровния
+     * Функция шифрования
      */
     @Override
     public String encrypt(String str) {
@@ -87,5 +87,10 @@ class CryptImpl implements Crypt {
             e.printStackTrace();
         }
         return s;
+    }
+
+    @Override
+    public void setKey(String key) {
+        this.KEY = key;
     }
 }

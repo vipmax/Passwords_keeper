@@ -20,11 +20,10 @@ public class MainForm extends JFrame {
     static int height = 650;
     static int width = 300;
     DefaultListModel<Unit> listModel;
-    private Change change;
     private JList unitsList;
     private JButton addUnitButton;
     private JTextField passTextField;
-    private JTextField unitTextField;
+    private JTextField siteTextField;
     private JPanel rootPanel;
     private JButton deleteSelectedUnit;
     private JButton showButton;
@@ -32,6 +31,7 @@ public class MainForm extends JFrame {
     private JButton changeButton;
     private JLabel infoLabel;
     private JLabel loginLabel;
+    private JTextField loginTextField;
     private List<Unit> saveBufferUnit = new ArrayList<Unit>();
     private List<Unit> deleteBufferUnit = new ArrayList<Unit>();
     private List<Unit> editBufferUnit = new ArrayList<Unit>();
@@ -65,8 +65,8 @@ public class MainForm extends JFrame {
         });
 
         addUnitButton.addActionListener(e -> {
-            if (!unitTextField.toString().isEmpty() && !passTextField.getText().isEmpty()) {
-                Unit unit = new Unit(unitTextField.getText(), passTextField.getText());
+            if (!siteTextField.toString().isEmpty() && !passTextField.getText().isEmpty()) {
+                Unit unit = new Unit(siteTextField.getText(),loginTextField.getText(), passTextField.getText());
                 addUnitToBuffer(unit);
             }
         });
@@ -74,8 +74,8 @@ public class MainForm extends JFrame {
             @Override
             public void keyReleased(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER)
-                    if (!unitTextField.toString().isEmpty() && !passTextField.getText().isEmpty()) {
-                        Unit unit = new Unit(unitTextField.getText(), passTextField.getText());
+                    if (!siteTextField.toString().isEmpty() && !passTextField.getText().isEmpty()) {
+                        Unit unit = new Unit(siteTextField.getText(),loginTextField.getText(), passTextField.getText());
                         addUnitToBuffer(unit);
                     }
             }
@@ -109,21 +109,40 @@ public class MainForm extends JFrame {
             if (unitsList.isSelectionEmpty()) {
                 return;
             }
-            Unit unit = listModel.get(unitsList.getSelectedIndex());
-            editUnit(unit);
+
+            Unit oldUnit = listModel.get(unitsList.getSelectedIndex());
+
+            if (changeButton.getText().equals("Изменить")) {
+                siteTextField.setText(oldUnit.getSite());
+                loginTextField.setText(oldUnit.getLogin());
+                passTextField.setText(oldUnit.getPassword());
+                changeButton.setText("Применить");
+                addUnitButton.setVisible(false);
+                deleteSelectedUnit.setVisible(false);
+                copyToBufferButton.setVisible(false);
+                return;
+            }
+
+            editUnit(oldUnit);
+            changeButton.setText("Изменить");
+            addUnitButton.setVisible(true);
+            deleteSelectedUnit.setVisible(true);
+            copyToBufferButton.setVisible(true);
         });
+
+
         System.out.println("Главное окно создано");
     }
 
     private void addUnitToBuffer(Unit unit) {
         if (saveBufferUnit.contains(unit) || dao.isContain(unit)) {
-            animateInfoLabel("Already exist", infoLabel);
+            animateInfoLabel("Уже существует", infoLabel);
             return;
         }
 
         listModel.addElement(unit);
         saveBufferUnit.add(unit);
-        animateInfoLabel("Adding successful", infoLabel);
+        animateInfoLabel("Добавлено", infoLabel);
     }
 
     private void deleteSelectedUnit() {
@@ -134,12 +153,12 @@ public class MainForm extends JFrame {
             if (saveBufferUnit.size() > 0 && saveBufferUnit.contains(unit)) {
                 saveBufferUnit.remove(unit);
                 listModel.remove(index);
-                animateInfoLabel("Deleting successful", infoLabel);
+                animateInfoLabel("Удалено", infoLabel);
                 System.out.println("Удалено из буфера сохранения");
                 return;
             }
             deleteBufferUnit.add(unit);
-            animateInfoLabel("Deleting successful", infoLabel);
+            animateInfoLabel("Удалено", infoLabel);
             listModel.remove(index);
 
         }
@@ -148,9 +167,8 @@ public class MainForm extends JFrame {
     }
 
     private void editUnit(Unit unit) {
-        change = new Change(unit, this.getLocationOnScreen().x + this.getSize().height / 2, this.getLocationOnScreen().y + this.getSize().height / 2);
-        Unit changingUnit = change.getChangingUnit();
-        if (changingUnit.getName() != unit.getName()) {
+        Unit changingUnit = new Unit(siteTextField.getText(),loginTextField.getText(), passTextField.getText());
+        if (changingUnit.getSite() != unit.getSite()) {
             deleteBufferUnit.add(unit);
             saveBufferUnit.add(changingUnit);
             listModel.removeElement(unit);
@@ -162,41 +180,31 @@ public class MainForm extends JFrame {
         unitsList.updateUI();
         if (saveBufferUnit.contains(unit)) {
             saveBufferUnit.set(saveBufferUnit.indexOf(unit), unit);
-            animateInfoLabel("Changing successful", infoLabel);
+            animateInfoLabel("Изменено", infoLabel);
             System.out.println("Изменено в буфере");
             return;
         }
 
         editBufferUnit.add(changingUnit);
-        animateInfoLabel("Changing successful", infoLabel);
+        animateInfoLabel("Изменено", infoLabel);
     }
 
     private void animateInfoLabel(String text, JLabel label) {
         label.setText(text);
+        if (thread != null) thread.interrupt();
 
-        if (thread != null) {
-            thread.interrupt();
-        }
         thread = new Thread(() -> {
-
             try {
-
-
                 for (int i = 0; i < 255; i++) {
                     label.setForeground(new Color(255, 0, 0, i));
                     Thread.sleep(5);
                 }
                 for (int i = 255; i > 0; i--) {
                     label.setForeground(new Color(255, 0, 0, i));
-
                     Thread.sleep(10);
                 }
-
                 label.setText("");
-
-            } catch (InterruptedException e) {
-            }
-
+            } catch (InterruptedException e) {}
         });
         thread.start();
     }
@@ -206,7 +214,7 @@ public class MainForm extends JFrame {
         this.setLocation(xLoc, yLoc);
         setSize(height, width);
         setContentPane(rootPanel);
-        setTitle("Password Keeper");
+        setTitle("Хранитель паролей");
         setVisible(false);
         unitsList.setVisible(false);
         unitsList.updateUI();
@@ -215,40 +223,36 @@ public class MainForm extends JFrame {
 
     public void shoow() {
         setVisible(true);
-
-
-        try {
-            Thread.sleep(100);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        System.out.println("MasterPassword.getLogin() = " + MasterPassword.getLogin());
-        animateInfoLabel("Welcome " + MasterPassword.getLogin(), infoLabel);
+        System.out.println("login = " + MasterPasswordForm.getLogin());
+        animateInfoLabel("Привет " + MasterPasswordForm.getLogin(), infoLabel);
         try {
             Thread.sleep(4000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        animateInfoLabel("All is encrypted", infoLabel);
+        animateInfoLabel("Не беспокойся", infoLabel);
         try {
             Thread.sleep(4000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        animateInfoLabel("Don't worry ", infoLabel);
+        animateInfoLabel("Все зашифровано", infoLabel);
+        try {
+            Thread.sleep(4000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        animateInfoLabel("   :)   ", infoLabel);
 
 
     }
 
     public void loadListModel(List<Unit> units) {
-
         units.forEach(listModel::addElement);
-
     }
 
     public void setClipboard(String str) {
-        animateInfoLabel("Copy", infoLabel);
+        animateInfoLabel("Скопировано", infoLabel);
         StringSelection ss = new StringSelection(str);
         Toolkit.getDefaultToolkit().getSystemClipboard().setContents(ss, null);
     }

@@ -2,24 +2,34 @@
  * Created by max on 26.03.2014.
  */
 public class Unit {
-    private String name;
+    private String site;
+    private String login;
     private String password;
 
-    public Unit(String name, String password) {
-        this.name = name;
+
+    public Unit(String site, String login,String password) {
+        this.site = site;
+        this.login = login;
         this.password = password;
     }
 
     public Unit() {
     }
 
-
-    public String getName() {
-        return name;
+    public String getLogin() {
+        return login;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setLogin(String login) {
+        this.login = login;
+    }
+
+    public String getSite() {
+        return site;
+    }
+
+    public void setSite(String site) {
+        this.site = site;
     }
 
     public String getPassword() {
@@ -33,10 +43,9 @@ public class Unit {
     @Override
     public String toString() {
         String str = "";
-        for (int i = 0; i < password.length(); i++) {
-            str = str + "*";
-        }
-        return name + "  -  " + str;
+        for (int i = 0; i < password.length(); i++) str = str + "*";
+
+        return site + "  -  " + login + " " + str;
     }
 
     @Override
@@ -46,7 +55,8 @@ public class Unit {
 
         Unit unit = (Unit) o;
 
-        if (name != null ? !name.equals(unit.name) : unit.name != null) return false;
+        if (login != null ? !login.equals(unit.login) : unit.login != null) return false;
+        if (site != null ? !site.equals(unit.site) : unit.site != null) return false;
         if (password != null ? !password.equals(unit.password) : unit.password != null) return false;
 
         return true;
@@ -54,8 +64,9 @@ public class Unit {
 
     @Override
     public int hashCode() {
-        int result = name != null ? name.hashCode() : 0;
+        int result = site != null ? site.hashCode() : 0;
         result = 31 * result + (password != null ? password.hashCode() : 0);
+        result = 31 * result + (login != null ? login.hashCode() : 0);
         return result;
     }
 }

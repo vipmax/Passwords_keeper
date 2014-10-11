@@ -24,16 +24,15 @@ public class DaoImpl implements Dao {
 
     @Override
     public void createTableIfNotExist() {
-        jdbcTemplate.update("CREATE TABLE IF NOT EXISTS passwords (name TEXT NOT NULL,password TEXT NOT NULL)");
+
+        jdbcTemplate.update("CREATE TABLE IF NOT EXISTS sites (site TEXT NOT NULL,login TEXT NOT NULL,password TEXT NOT NULL)");
         System.out.println("Таблица с паролями создана");
     }
 
     @Override
     public void saveUnit(Unit unit) {
-
-        int update = jdbcTemplate.update("INSERT INTO passwords   values (?,?)", unit.getName(), unit.getPassword());
-
-        System.out.println("Добавлено в passwords: " + unit.getName() + " " + unit.getPassword() + " строчек: " + update);
+        int rowUpdated = jdbcTemplate.update("INSERT INTO sites   values (?,?,?)", unit.getSite(),unit.getLogin(), unit.getPassword());
+        System.out.println("Добавлено в sites: " + unit.getSite() + " " + unit.getLogin() + " " + unit.getPassword() + " строчек: " + rowUpdated);
     }
 
     @Override
@@ -43,26 +42,26 @@ public class DaoImpl implements Dao {
             @Override
             public void setValues(PreparedStatement preparedStatement, int i) throws SQLException {
                 Unit unit = units.get(i);
-                preparedStatement.setString(1, unit.getName());
-                preparedStatement.setString(2, crypt.encrypt(unit.getPassword()));
-
+                preparedStatement.setString(1, unit.getSite());
+                preparedStatement.setString(2, unit.getLogin());
+                preparedStatement.setString(3, crypt.encrypt(unit.getPassword()));
             }
-
             @Override
             public int getBatchSize() {
                 return units.size();
             }
         };
-        jdbcTemplate.batchUpdate("INSERT INTO passwords  values (?,?)", batchPreparedStatementSetter);
-        System.out.println("Вставлено в passwords = " + units.size());
+
+        jdbcTemplate.batchUpdate("INSERT INTO sites  values (?,?,?)", batchPreparedStatementSetter);
+        System.out.println("Вставлено в sites = " + units.size());
     }
 
     @Override
     public List<Unit> getAllUnit() {
-        String sql = "SELECT * FROM passwords";
+        String sql = "SELECT * FROM sites";
 
-        List<Unit> query = jdbcTemplate.query(sql, (resultSet, i) -> new Unit(resultSet.getString(1), crypt.decrypt(resultSet.getString(2))));
-        System.out.println("Таблица passwords загружена в память");
+        List<Unit> query = jdbcTemplate.query(sql, (resultSet, i) -> new Unit(resultSet.getString(1), resultSet.getString(2), crypt.decrypt(resultSet.getString(3))));
+        System.out.println("Таблица sites загружена в память");
         return query;
 
 
@@ -70,27 +69,25 @@ public class DaoImpl implements Dao {
 
     @Override
     public void deleteUnit(Unit unit) {
-
-        int update = jdbcTemplate.update("delete from passwords where passwords.name = ? AND passwords.password = ? ", unit.getName(), crypt.encrypt(unit.getPassword()));
-        System.out.println("Удалено из passwords" + update + " строк");
+        int update = jdbcTemplate.update("delete from sites where sites.site = ? AND sites.password = ? ", unit.getSite(), crypt.encrypt(unit.getPassword()));
+        System.out.println("Удалено из sites" + update + " строк");
     }
 
     @Override
     public void editPasswordUnit(Unit unit) {
-        System.out.println("Изменяем  в таблице " + unit.getName() + " " + unit.getPassword());
-        jdbcTemplate.execute("update passwords SET password = '" + crypt.encrypt(unit.getPassword()) + "' where  name is '" + unit.getName() + "'");
+        System.out.println("Изменяем  в таблице sites " + unit.getSite() + " " + unit.getPassword());
+        jdbcTemplate.execute("update sites set password = '" + crypt.encrypt(unit.getPassword()) + "' where  name is '" + unit.getSite() + "'");
     }
 
     @Override
     public boolean isContain(Unit unit) {
-        int count = jdbcTemplate.queryForInt("select count(*) from passwords where name = ?  and password = ?", unit.getName(), crypt.encrypt(unit.getPassword()));
+        int count = jdbcTemplate.queryForInt("select count(*) from sites where site = ?  and login = ? and password = ?", unit.getSite(),unit.getLogin(), crypt.encrypt(unit.getPassword()));
         return count > 0;
     }
 
 
     @Override
     public boolean isCreateMasterPasswordTable() {
-
         try {
             jdbcTemplate.update("CREATE TABLE master_password (name TEXT NOT NULL,password TEXT NOT NULL)");
         } catch (Exception e) {
@@ -103,7 +100,6 @@ public class DaoImpl implements Dao {
 
     @Override
     public boolean checkMasterPassword(String mail, String pass) {
-
         boolean b = jdbcTemplate.queryForInt("select count(*) from master_password where name = ?  and password = ?",
                 mail, crypt.MD5(pass)) > 0;
         System.out.println("Проверка пароля = " + b);
@@ -112,10 +108,9 @@ public class DaoImpl implements Dao {
 
     @Override
     public void createMasterPassword(String email, String password) {
+        crypt.setKey(crypt.MD5(password));
         jdbcTemplate.update("insert into master_password values (?,?)", email, crypt.MD5(password));
         System.out.println("Мастер пароль создан");
-        System.out.println("email = " + email);
-        System.out.println("password = " + password);
     }
 
 }
